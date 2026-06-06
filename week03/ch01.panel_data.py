@@ -15,7 +15,7 @@ welfare = welfare.rename(columns={
     'h14_g11'   : 'religion',
     'p1402_8aq1': 'income',
     'h14_eco9'  : 'code_job',
-    'h13_reg7'  : 'region',
+    'h14_reg7'  : 'code_region',
     'h14_g10' : 'marriage_type'
 })
 
@@ -255,8 +255,9 @@ rel_div = \
     rel_div.query('marriage == "divorce"')\
     .assign(proportion = rel_div['proportion'] * 100 ) \
     .round(1) # 반올림
-print(rel_div)
+# print(rel_div)
 ''' 결과 
+
   religion marriage  proportion
 1       No  divorce         9.5
 3      Yes  divorce         8.0
@@ -266,3 +267,95 @@ print(rel_div)
 
 '''
 
+### 5. 막대 그래프 그리기
+# sns.barplot(data=rel_div, x='religion', y = 'proportion')
+# plt.show()
+
+''' 지역별 연령대 비율 - 어느 지역에 노년층이 많을까 '''
+## 1. 변수 검토
+# print(welfare['code_region'].dtypes) # float
+# print(welfare['code_region'].value_counts())
+
+## 2.
+list_region = pd.DataFrame({'code_region' : [1,2,3,4,5,6,7],
+                            'region' : ['서울',
+                                        '수도권(인천/경기)',
+                                        '부산/경남/울산',
+                                        '대구/경북',
+                                        '대전/충남',
+                                        '강원/충북',
+                                        '광주/전남/전북,제주도']})
+
+# print(list_region)
+'''결과값 
+0            1            서울
+1            2    수도권(인천/경기)
+2            3      부산/경남/울산
+3            4         대구/경북
+4            5         대전/충남
+5            6         강원/충북
+6            7  광주/전남/전북,제주도
+'''
+
+## 3. 지역명 변수 추가
+welfare = welfare.merge(list_region, how='left', on='code_region')
+# print(welfare[['code_region','region']].head(20))
+'''
+    code_region      region
+0           1.0          서울
+1           1.0          서울
+2           1.0          서울
+3           1.0          서울
+4           1.0          서울
+5           1.0          서울
+6           1.0          서울
+7           1.0          서울
+8           2.0  수도권(인천/경기)
+9           1.0          서울
+'''
+
+
+### 4. 지역별 연령대 비율 분석
+region_ageg = welfare.groupby('region', as_index=False)\
+    ['ageg']\
+    .value_counts(normalize = True)
+# print(region_ageg)
+
+### 5. 데이터 시각화
+region_ageg = \
+    region_ageg.assign(proportion = region_ageg['proportion'] * 100)\
+    .round(1)
+
+# sns.barplot(data=region_ageg, y = 'region', x = 'proportion', hue = 'ageg')
+# plt.show()
+
+### 누적 비율 막대 그래프 생성
+# 1. pivot
+pivot_df = region_ageg[['region', 'ageg','proportion']].pivot(index = 'region',
+                                                              columns = 'ageg',
+                                                              values = 'proportion')
+# print(pivot_df)
+'''
+ageg          middle   old  young
+region                           
+강원/충북           30.9  45.9   23.2
+광주/전남/전북,제주도    31.8  44.9   23.3
+대구/경북           29.6  50.4   20.0
+대전/충남           33.6  41.3   25.0
+부산/경남/울산        33.4  43.8   22.9
+서울              38.5  37.6   23.9
+수도권(인천/경기)      38.8  32.5   28.7
+'''
+
+# 데이터 시각화
+## 2. 가로 막대 그래프
+# pivot_df.plot.barh(stacked=True)
+# plt.show()
+'''좀 더 직관적인 그래프 '''
+
+## 3. 막대 정렬 = 노년층 비율 기준으로 정렬 변수 순서 바꾸기
+reorder_df = pivot_df.sort_values('old')[['young', 'middle','old']]
+# print(reorder_df)
+
+# reorder_df.plot.barh(stacked=True)
+# plt.show()
