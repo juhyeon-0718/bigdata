@@ -359,3 +359,5 @@ reorder_df = pivot_df.sort_values('old')[['young', 'middle','old']]
 
 # reorder_df.plot.barh(stacked=True)
 # plt.show()
+
+#----------------------------------------------------------------------
